@@ -221,6 +221,36 @@
       box-shadow: 0 0 22px rgba(255, 177, 93, .36);
     }
 
+    .search-line input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .search-line input::placeholder { color: rgba(255, 247, 236, .56); }
+    .quick-save {
+      flex: 0 0 32px;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(255, 139, 45, .85);
+      color: #fff7ec;
+      font-size: 18px;
+    }
+    .empty-state {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      padding: 8px 2px;
+    }
+    .source-row { width: 100%; text-align: left; color: inherit; background: transparent; }
+
     .grid {
       display: grid;
       gap: 12px;
@@ -829,16 +859,16 @@
       .stat-value { font-size: 38px; }
     }
   </style>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script async src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
   <main class="app" aria-label="Дашборд Карта радости">
     <nav class="top-pill" aria-label="Разделы">
       <div class="pill-tabs">
-        <button class="pill-tab active">Сегодня</button>
-        <button class="pill-tab">Неделя</button>
-        <button class="pill-tab">Месяц</button>
-        <button class="pill-tab">История</button>
+        <button class="pill-tab active" data-view="today">Сегодня</button>
+        <button class="pill-tab" data-view="week">Неделя</button>
+        <button class="pill-tab" data-view="month">Месяц</button>
+        <button class="pill-tab" data-view="history">История</button>
       </div>
       <button class="add-top js-open" aria-label="Добавить радость">+</button>
     </nav>
@@ -851,10 +881,11 @@
         </div>
         <div class="avatar" aria-label="Профиль">☀️</div>
       </div>
-      <div class="search-line">
+      <form class="search-line" id="quickJoyForm">
         <span class="orb" aria-hidden="true"></span>
-        <span>Что сегодня было живым?</span>
-      </div>
+        <input id="quickJoyInput" type="text" inputmode="text" autocomplete="off" placeholder="Что сегодня было живым?" aria-label="Быстро добавить радость" />
+        <button type="submit" class="quick-save" aria-label="Сохранить">＋</button>
+      </form>
       <p class="eyebrow" id="tgStatus" style="margin:12px 0 0; position:relative; z-index:1;">Mini App готов к работе</p>
     </section>
 
@@ -930,7 +961,7 @@
     <section class="card heatmap-card" aria-label="Тепловая карта месяца">
       <div class="heatmap-head">
         <h3>Тепловая карта</h3>
-        <span class="small-link">Декабрь</span>
+        <span class="small-link" id="currentMonthLabel">Месяц</span>
       </div>
       <div class="heatmap-grid" id="heatmap"></div>
     </section>
@@ -990,10 +1021,10 @@
   <button class="fab js-open" aria-label="Добавить радость">+</button>
 
   <nav class="bottom-nav" aria-label="Нижняя навигация">
-    <button class="nav-item active"><strong>⌂</strong>Дом</button>
-    <button class="nav-item"><strong>◌</strong>Карта</button>
-    <button class="nav-item"><strong>✦</strong>Радости</button>
-    <button class="nav-item"><strong>☻</strong>Профиль</button>
+    <button class="nav-item active" data-nav="home"><strong>⌂</strong>Дом</button>
+    <button class="nav-item" data-nav="map"><strong>◌</strong>Карта</button>
+    <button class="nav-item" data-nav="joys"><strong>✦</strong>Радости</button>
+    <button class="nav-item" data-nav="profile"><strong>☻</strong>Профиль</button>
   </nav>
 
   <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-label="Добавить радость">
@@ -1035,203 +1066,39 @@
 
   <script>
     const tg = window.Telegram?.WebApp;
-
-    function tgCall(method, ...args) {
-      try {
-        if (tg && typeof tg[method] === 'function') return tg[method](...args);
-      } catch (error) {
-        console.warn('Telegram WebApp method failed:', method, error);
-      }
-      return null;
-    }
-
-    function initTelegramMiniApp() {
-      if (!tg) return;
-
-      tgCall('ready');
-      tgCall('expand');
-      tgCall('enableClosingConfirmation');
-
-      const setViewport = () => {
-        const h = tg.viewportStableHeight || tg.viewportHeight || window.innerHeight;
-        document.documentElement.style.setProperty('--tg-viewport-height', h + 'px');
-      };
-      setViewport();
-      tgCall('onEvent', 'viewportChanged', setViewport);
-      tgCall('setHeaderColor', '#22120d');
-      tgCall('setBackgroundColor', '#22120d');
-
-      const user = tg.initDataUnsafe?.user;
-      if (user) {
-        const name = user.first_name || user.username || 'You';
-        const nameEl = document.getElementById('tgUserName');
-        if (nameEl) nameEl.textContent = name;
-        const statusEl = document.getElementById('tgStatus');
-        if (statusEl) statusEl.textContent = 'Открыто в Telegram Mini App';
-      }
-    }
-
-    try {
-      initTelegramMiniApp();
-    } catch (error) {
-      console.warn('Telegram init failed, app continues in browser mode:', error);
-    }
-
-    const icons = {
-      'Природа': '🌿', 'Красота': '🌅', 'Люди': '🤍', 'Творчество': '🎨',
-      'Тело': '💃', 'Тишина': '🕯️', 'Новое': '🧭', 'Дом': '🏡'
-    };
-
-    const seed = [
-      { text: 'Прогулка и тёплый воздух после дождя', category: 'Природа', rate: 5, date: 'Сегодня' },
-      { text: 'Красивый оранжевый свет на стене', category: 'Красота', rate: 4, date: 'Сегодня' },
-      { text: 'Музыка, под которую захотелось двигаться', category: 'Тело', rate: 4, date: 'Сегодня' },
-      { text: 'Разговор, после которого стало легче', category: 'Люди', rate: 5, date: 'Вчера' },
-      { text: 'Десять минут тишины без телефона', category: 'Тишина', rate: 3, date: 'Вчера' }
-    ];
-
-    let joys = JSON.parse(localStorage.getItem('joy-map-items') || 'null') || seed;
-    let selectedRate = 4;
-
-    const modal = document.getElementById('modal');
-    const form = document.getElementById('joyForm');
-    const historyList = document.getElementById('historyList');
-    const todayCount = document.getElementById('todayCount');
-    const avgJoy = document.getElementById('avgJoy');
-    const chips = document.getElementById('chips');
-    const sources = document.getElementById('sources');
-    const topCategory = document.getElementById('topCategory');
-    const topEmoji = document.getElementById('topEmoji');
-    const topCategorySub = document.getElementById('topCategorySub');
-
-    function save() {
-      localStorage.setItem('joy-map-items', JSON.stringify(joys));
-      try {
-        tg?.CloudStorage?.setItem?.('joy-map-items', JSON.stringify(joys));
-      } catch (error) {
-        console.warn('Telegram CloudStorage save failed:', error);
-      }
-    }
-
-    function countCategories() {
-      return joys.reduce((acc, item) => {
-        acc[item.category] = (acc[item.category] || 0) + 1;
-        return acc;
-      }, {});
-    }
-
-    function renderStats() {
-      const today = joys.filter(item => item.date === 'Сегодня').length;
-      const avg = joys.reduce((sum, item) => sum + Number(item.rate), 0) / joys.length;
-      const cat = countCategories();
-      const sorted = Object.entries(cat).sort((a, b) => b[1] - a[1]);
-      const top = sorted[0] || ['Природа', 0];
-
-      todayCount.textContent = today;
-      avgJoy.textContent = avg.toFixed(1);
-      topCategory.textContent = top[0];
-      topEmoji.textContent = icons[top[0]] || '✦';
-      topCategorySub.textContent = `${top[1]} раз за неделю`;
-
-      chips.innerHTML = sorted.map(([name, count], index) => {
-        const colors = ['green', 'yellow', 'pink', 'blue', 'violet'];
-        return `<button class="chip"><span class="dot ${colors[index % colors.length]}"></span>${name} · ${count}</button>`;
-      }).join('');
-
-      sources.innerHTML = sorted.slice(0, 3).map(([name, count]) => {
-        const hint = {
-          'Природа': 'даёт больше всего спокойствия',
-          'Красота': 'возвращает вкус к дню',
-          'Люди': 'создают чувство тепла',
-          'Творчество': 'напоминает о живом внутри',
-          'Тело': 'помогает почувствовать себя',
-          'Тишина': 'собирает внимание обратно',
-          'Новое': 'даёт интерес и движение',
-          'Дом': 'создаёт уют и опору'
-        }[name] || 'частый источник радости';
-        return `
-          <div class="source-row">
-            <div class="source-emoji">${icons[name] || '✦'}</div>
-            <div>
-              <div class="source-title">${name}</div>
-              <div class="source-sub">${hint}</div>
-            </div>
-            <div class="source-score">${count}</div>
-          </div>`;
-      }).join('');
-    }
-
-    function renderHistory() {
-      historyList.innerHTML = joys.slice(0, 7).map(item => {
-        const stars = '★★★★★'.slice(0, item.rate);
-        return `
-          <div class="history-item">
-            <div class="small-emoji">${icons[item.category] || '✦'}</div>
-            <div>
-              <div class="history-title">${escapeHtml(item.text)}</div>
-              <div class="history-meta">${item.category} · ${item.date}</div>
-            </div>
-            <div class="stars">${stars}</div>
-          </div>`;
-      }).join('');
-    }
-
-    function renderHeatmap() {
-      const heatmap = document.getElementById('heatmap');
-      const levels = [0,1,0,2,1,3,0,1,2,0,3,1,2,1,0,2,3,1,0,2,1,3,0,1,2,0,1,3];
-      heatmap.innerHTML = levels.map((level, index) => {
-        const todayClass = index === 27 ? ' today' : '';
-        return `<div class="day level-${level}${todayClass}">${index + 1}</div>`;
-      }).join('');
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/[&<>'"]/g, tag => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-      }[tag]));
-    }
-
-    document.querySelectorAll('.js-open').forEach(btn => {
-      btn.addEventListener('click', () => {
-        tg?.HapticFeedback?.impactOccurred?.('light');
-        modal.classList.add('show');
-      });
-    });
-
-    document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('show'));
-    modal.addEventListener('click', event => {
-      if (event.target === modal) modal.classList.remove('show');
-    });
-
-    document.querySelectorAll('.rate-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        tg?.HapticFeedback?.selectionChanged?.();
-        selectedRate = Number(btn.dataset.rate);
-        document.querySelectorAll('.rate-btn').forEach(item => item.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
-
-    form.addEventListener('submit', event => {
-      event.preventDefault();
-      const text = document.getElementById('joyText').value.trim();
-      const category = document.getElementById('category').value;
-      if (!text) return;
-
-      tg?.HapticFeedback?.notificationOccurred?.('success');
-      joys.unshift({ text, category, rate: selectedRate, date: 'Сегодня' });
-      save();
-      renderStats();
-      renderHistory();
-      form.reset();
-      selectedRate = 4;
-      document.querySelectorAll('.rate-btn').forEach(item => item.classList.toggle('active', item.dataset.rate === '4'));
-      modal.classList.remove('show');
-    });
-
-    renderHeatmap();
-    renderStats();
-    renderHistory();
+    const STORAGE_KEY = 'joy-map-items-v2';
+    const OLD_STORAGE_KEY = 'joy-map-items';
+    const icons = {'Природа':'🌿','Красота':'🌅','Люди':'🤍','Творчество':'🎨','Тело':'💃','Тишина':'🕯️','Новое':'🧭','Дом':'🏡'};
+    const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    function tgCall(method,...args){try{if(tg&&typeof tg[method]==='function')return tg[method](...args)}catch(e){console.warn('Telegram WebApp method failed:',method,e)}return null}
+    function initTelegramMiniApp(){if(!tg)return;tgCall('ready');tgCall('expand');tgCall('enableClosingConfirmation');const setViewport=()=>{const h=tg.viewportStableHeight||tg.viewportHeight||window.innerHeight;document.documentElement.style.setProperty('--tg-viewport-height',h+'px')};setViewport();tgCall('onEvent','viewportChanged',setViewport);tgCall('setHeaderColor','#22120d');tgCall('setBackgroundColor','#22120d');const user=tg.initDataUnsafe?.user;if(user){const name=user.first_name||user.username||'You';const nameEl=document.getElementById('tgUserName');if(nameEl)nameEl.textContent=name;const statusEl=document.getElementById('tgStatus');if(statusEl)statusEl.textContent='Открыто в Telegram Mini App'}}
+    setTimeout(()=>{try{initTelegramMiniApp()}catch(e){console.warn('Telegram init failed:',e)}},0);window.addEventListener('load',()=>{try{initTelegramMiniApp()}catch(e){console.warn('Telegram init on load failed:',e)}});
+    function todayISO(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+    function toISO(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+    function labelDate(iso){const today=todayISO();if(iso===today)return'Сегодня';const y=new Date();y.setDate(y.getDate()-1);if(iso===toISO(y))return'Вчера';const [year,month,day]=iso.split('-');return `${day}.${month}.${year}`}
+    function startOfWeek(date){const d=new Date(date);const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);d.setHours(0,0,0,0);return d}
+    function loadJoys(){try{localStorage.removeItem(OLD_STORAGE_KEY)}catch(e){}try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')||[]}catch(e){return[]}}
+    let joys=loadJoys(),selectedRate=4,currentView='today',activeCategory=null;
+    const modal=document.getElementById('modal'),form=document.getElementById('joyForm'),quickJoyForm=document.getElementById('quickJoyForm'),quickJoyInput=document.getElementById('quickJoyInput'),historyList=document.getElementById('historyList'),todayCount=document.getElementById('todayCount'),streakCount=document.getElementById('streakCount'),avgJoy=document.getElementById('avgJoy'),chips=document.getElementById('chips'),sources=document.getElementById('sources'),topCategory=document.getElementById('topCategory'),topEmoji=document.getElementById('topEmoji'),topCategorySub=document.getElementById('topCategorySub'),currentMonthLabel=document.getElementById('currentMonthLabel');
+    function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(joys));try{tg?.CloudStorage?.setItem?.(STORAGE_KEY,JSON.stringify(joys))}catch(e){console.warn('Telegram CloudStorage save failed:',e)}}
+    function addJoy(text,category='Новое',rate=4,iso=todayISO()){const clean=text.trim();if(!clean)return;joys.unshift({text:clean,category,rate:Number(rate),iso,date:labelDate(iso),createdAt:new Date().toISOString()});save();tg?.HapticFeedback?.notificationOccurred?.('success');renderAll()}
+    function filteredJoys(){const now=new Date(),today=todayISO(),weekStart=startOfWeek(now);return joys.filter(item=>{if(activeCategory&&item.category!==activeCategory)return false;const iso=item.iso||today;if(currentView==='today')return iso===today;if(currentView==='week')return new Date(iso)>=weekStart;if(currentView==='month')return iso.slice(0,7)===today.slice(0,7);return true})}
+    function countCategories(items=joys){return items.reduce((acc,item)=>{acc[item.category]=(acc[item.category]||0)+1;return acc},{})}
+    function calcStreak(){const dates=new Set(joys.map(j=>j.iso||todayISO()));let d=new Date(),count=0;while(dates.has(toISO(d))){count++;d.setDate(d.getDate()-1)}return count}
+    function renderStats(){const today=todayISO(),todayItems=joys.filter(item=>(item.iso||today)===today),visible=filteredJoys(),avg=visible.length?visible.reduce((s,i)=>s+Number(i.rate),0)/visible.length:0,sorted=Object.entries(countCategories(joys)).sort((a,b)=>b[1]-a[1]),top=sorted[0];todayCount.textContent=todayItems.length;streakCount.textContent=calcStreak();avgJoy.textContent=avg?avg.toFixed(1):'0.0';topCategory.textContent=top?top[0]:'Пока пусто';topEmoji.textContent=top?(icons[top[0]]||'✦'):'☀️';topCategorySub.textContent=top?`${top[1]} раз`:'добавь первую радость';if(!sorted.length){chips.innerHTML=`<button class="chip js-open"><span class="dot yellow"></span>Добавить первую радость</button>`;sources.innerHTML=`<div class="empty-state">Источники появятся после первых записей. Нажми «+» или введи радость в поле сверху.</div>`;bindOpenButtons();return}const colors=['green','yellow','pink','blue','violet'];chips.innerHTML=sorted.map(([name,count],i)=>`<button class="chip" data-category="${name}"><span class="dot ${colors[i%colors.length]}"></span>${name} · ${count}</button>`).join('')+(activeCategory?`<button class="chip" data-clear-category="1">Сбросить фильтр</button>`:'');sources.innerHTML=sorted.slice(0,3).map(([name,count])=>{const hint={'Природа':'даёт больше всего спокойствия','Красота':'возвращает вкус к дню','Люди':'создают чувство тепла','Творчество':'напоминает о живом внутри','Тело':'помогает почувствовать себя','Тишина':'собирает внимание обратно','Новое':'даёт интерес и движение','Дом':'создаёт уют и опору'}[name]||'частый источник радости';return `<button class="source-row" data-category="${name}"><div class="source-emoji">${icons[name]||'✦'}</div><div><div class="source-title">${name}</div><div class="source-sub">${hint}</div></div><div class="source-score">${count}</div></button>`}).join('');bindCategoryButtons()}
+    function renderHistory(){const items=filteredJoys();if(!items.length){historyList.innerHTML=`<div class="empty-state">Здесь появятся твои радости. Сейчас список пуст${activeCategory?' по выбранной категории':''}.</div>`;return}historyList.innerHTML=items.slice(0,20).map(item=>`<div class="history-item"><div class="small-emoji">${icons[item.category]||'✦'}</div><div><div class="history-title">${escapeHtml(item.text)}</div><div class="history-meta">${item.category} · ${labelDate(item.iso||todayISO())}</div></div><div class="stars">${'★★★★★'.slice(0,Number(item.rate))}</div></div>`).join('')}
+    function renderHeatmap(){const heatmap=document.getElementById('heatmap'),now=new Date(),year=now.getFullYear(),month=now.getMonth();currentMonthLabel.textContent=monthNames[month];const daysInMonth=new Date(year,month+1,0).getDate(),byDay={};joys.forEach(item=>{const iso=item.iso||todayISO();if(iso.slice(0,7)===`${year}-${String(month+1).padStart(2,'0')}`){const day=Number(iso.slice(8,10));byDay[day]=byDay[day]||{count:0,sum:0};byDay[day].count+=1;byDay[day].sum+=Number(item.rate||0)}});heatmap.innerHTML=Array.from({length:daysInMonth},(_,i)=>{const day=i+1,data=byDay[day],avg=data?data.sum/data.count:0,level=!data?0:avg>=4.5?3:avg>=3.5?2:1,todayClass=day===now.getDate()?' today':'';return `<button class="day level-${level}${todayClass}" data-day="${day}">${day}</button>`}).join('');document.querySelectorAll('.day').forEach(btn=>{btn.addEventListener('click',()=>{const day=String(btn.dataset.day).padStart(2,'0');document.getElementById('joyText').value='';modal.dataset.iso=`${year}-${String(month+1).padStart(2,'0')}-${day}`;modal.classList.add('show');setTimeout(()=>document.getElementById('joyText')?.focus(),120)})})}
+    function escapeHtml(str){return String(str).replace(/[&<>'"]/g,tag=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[tag]))}
+    function bindOpenButtons(){document.querySelectorAll('.js-open').forEach(btn=>{btn.onclick=()=>{tg?.HapticFeedback?.impactOccurred?.('light');modal.dataset.iso=todayISO();modal.classList.add('show');setTimeout(()=>document.getElementById('joyText')?.focus(),120)}})}
+    function bindCategoryButtons(){document.querySelectorAll('[data-category]').forEach(btn=>{btn.onclick=()=>{activeCategory=btn.dataset.category;renderAll()}});document.querySelectorAll('[data-clear-category]').forEach(btn=>{btn.onclick=()=>{activeCategory=null;renderAll()}})}
+    document.querySelectorAll('.pill-tab').forEach(btn=>{btn.addEventListener('click',()=>{currentView=btn.dataset.view||'today';document.querySelectorAll('.pill-tab').forEach(item=>item.classList.toggle('active',item===btn));if(currentView==='history')document.getElementById('history')?.scrollIntoView({behavior:'smooth'});renderAll()})});
+    document.querySelectorAll('.nav-item').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item===btn));const nav=btn.dataset.nav;if(nav==='home')window.scrollTo({top:0,behavior:'smooth'});if(nav==='map')document.querySelector('.heatmap-card')?.scrollIntoView({behavior:'smooth'});if(nav==='joys')document.getElementById('history')?.scrollIntoView({behavior:'smooth'});if(nav==='profile')modal.classList.add('show')})});
+    quickJoyForm.addEventListener('submit',e=>{e.preventDefault();addJoy(quickJoyInput.value,'Новое',4,todayISO());quickJoyInput.value='';quickJoyInput.blur()});
+    document.getElementById('closeModal').addEventListener('click',()=>modal.classList.remove('show'));modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('show')});
+    document.querySelectorAll('.rate-btn').forEach(btn=>{btn.addEventListener('click',()=>{tg?.HapticFeedback?.selectionChanged?.();selectedRate=Number(btn.dataset.rate);document.querySelectorAll('.rate-btn').forEach(item=>item.classList.remove('active'));btn.classList.add('active')})});
+    form.addEventListener('submit',e=>{e.preventDefault();const text=document.getElementById('joyText').value.trim(),category=document.getElementById('category').value;if(!text)return;addJoy(text,category,selectedRate,modal.dataset.iso||todayISO());form.reset();selectedRate=4;document.querySelectorAll('.rate-btn').forEach(item=>item.classList.toggle('active',item.dataset.rate==='4'));modal.classList.remove('show')});
+    function renderAll(){renderHeatmap();renderStats();renderHistory();bindOpenButtons()}
+    renderAll();
   </script>
 </body>
 </html>

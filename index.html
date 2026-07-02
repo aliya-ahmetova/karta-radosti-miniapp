@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Карта радости — Mobile Dashboard</title>
+  <style>
+    :root {
+      --bg-1: #22120d;
+      --bg-2: #6f3b24;
+      --bg-3: #d97832;
+      --cream: #fff1dc;
+      --cream-soft: rgba(255, 241, 220, .78);
+      --text: #fff7ec;
+      --muted: rgba(255, 247, 236, .66);
+      --glass: rgba(255, 231, 204, .13);
+      --glass-strong: rgba(255, 231, 204, .22);
+      --stroke: rgba(255, 238, 215, .22);
+      --shadow: 0 24px 70px rgba(35, 12, 4, .42);
+      --orange: #ff8b2d;
+      --orange-2: #ffb15d;
+      --green: #76f0c4;
+      --yellow: #ffe28a;
+      --pink: #ff8fb4;
+      --blue: #8ad9ff;
+      --violet: #d8a2ff;
+      --radius-xl: 30px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --tg-viewport-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { min-height: 100%; overscroll-behavior: none; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 50% -12%, rgba(255, 226, 138, .42), transparent 28%),
+        radial-gradient(circle at 88% 18%, rgba(255, 139, 45, .42), transparent 28%),
+        radial-gradient(circle at 4% 72%, rgba(255, 177, 93, .30), transparent 26%),
+        linear-gradient(145deg, var(--bg-1), var(--bg-2) 52%, #25110b 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background:
+        linear-gradient(120deg, rgba(255,255,255,.12), transparent 22%, transparent 78%, rgba(255,255,255,.10)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.28'/%3E%3C/svg%3E");
+      opacity: .72;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 18px 12px 92px;
+      z-index: -1;
+      border: 1px solid rgba(255, 239, 217, .18);
+      border-radius: 42px;
+      box-shadow: inset 0 0 52px rgba(255, 255, 255, .045);
+      pointer-events: none;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { border: 0; color: inherit; cursor: pointer; }
+
+    .app {
+      width: min(100%, 440px);
+      min-height: var(--tg-viewport-height);
+      margin: 0 auto;
+      padding: 18px 14px calc(98px + var(--safe-bottom));
+      position: relative;
+    }
+
+    .top-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px;
+      margin: 0 auto 18px;
+      width: min(100%, 370px);
+      border-radius: 999px;
+      background: rgba(63, 36, 24, .42);
+      border: 1px solid rgba(255, 238, 215, .16);
+      box-shadow: 0 16px 45px rgba(41, 13, 4, .18);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .pill-tabs {
+      display: flex;
+      gap: 4px;
+      min-width: 0;
+      overflow: auto;
+      scrollbar-width: none;
+    }
+    .pill-tabs::-webkit-scrollbar { display: none; }
+
+    .pill-tab {
+      flex: 0 0 auto;
+      padding: 9px 13px;
+      color: rgba(255, 247, 236, .72);
+      border-radius: 999px;
+      font-size: 12px;
+      line-height: 1;
+      background: transparent;
+    }
+
+    .pill-tab.active {
+      color: var(--text);
+      background: rgba(255, 241, 220, .13);
+      box-shadow: inset 0 0 0 1px rgba(255, 238, 215, .08);
+    }
+
+    .add-top {
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255, 139, 45, 1), rgba(255, 177, 93, .88));
+      box-shadow: 0 10px 25px rgba(255, 139, 45, .28);
+      font-size: 22px;
+    }
+
+    .hero {
+      padding: 22px 18px 16px;
+      border: 1px solid var(--stroke);
+      border-radius: 34px;
+      background: linear-gradient(145deg, rgba(255, 235, 211, .16), rgba(255, 235, 211, .08));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(26px);
+      -webkit-backdrop-filter: blur(26px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 210px;
+      height: 210px;
+      right: -84px;
+      top: -78px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 226, 138, .38), transparent 62%);
+      pointer-events: none;
+    }
+
+    .hero-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      position: relative;
+      z-index: 1;
+    }
+
+    .eyebrow {
+      margin: 0 0 7px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .02em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      line-height: 1.04;
+      letter-spacing: -.04em;
+      max-width: 240px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 35% 28%, #fff7d6 0 10%, transparent 11%),
+        linear-gradient(135deg, #ff8b2d, #ffb15d 48%, #9d5233);
+      border: 1px solid rgba(255,255,255,.34);
+      box-shadow: 0 12px 22px rgba(43, 12, 3, .24);
+      font-size: 21px;
+    }
+
+    .search-line {
+      margin-top: 18px;
+      display: flex;
+      gap: 9px;
+      align-items: center;
+      min-height: 44px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 244, 230, .13);
+      border: 1px solid rgba(255, 242, 223, .13);
+      color: rgba(255, 247, 236, .56);
+      font-size: 13px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .orb {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: conic-gradient(from 160deg, #64f7c8, #89d8ff, #dc8aff, #ff8b2d, #ffe28a, #64f7c8);
+      box-shadow: 0 0 22px rgba(255, 177, 93, .36);
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .grid.two { grid-template-columns: 1fr 1fr; }
+    .grid.big-small { grid-template-columns: 1.15fr .85fr; }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(145deg, rgba(255, 238, 215, .16), rgba(255, 238, 215, .08));
+      border: 1px solid var(--stroke);
+      box-shadow: 0 18px 42px rgba(38, 11, 2, .20);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+
+    .card.inner-glow::after {
+      content: "";
+      position: absolute;
+      inset: auto -40px -60px auto;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 139, 45, .32), transparent 64%);
+      pointer-events: none;
+    }
+
+    .stat-card {
+      min-height: 128px;
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .icon-chip {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: rgba(255, 244, 230, .12);
+      border: 1px solid rgba(255, 242, 223, .13);
+    }
+
+    .stat-value {
+      margin: 10px 0 0;
+      font-size: 35px;
+      line-height: 1;
+      letter-spacing: -.06em;
+    }
+
+    .stat-note {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .accent-card {
+      background:
+        radial-gradient(circle at 74% 14%, rgba(255, 226, 138, .46), transparent 32%),
+        linear-gradient(145deg, rgba(255, 139, 45, .92), rgba(214, 84, 21, .88));
+      border-color: rgba(255, 234, 198, .26);
+    }
+
+    .category-card {
+      min-height: 128px;
+      padding: 16px;
+    }
+
+    .category-title {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .category-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .big-emoji {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      background: rgba(255, 241, 220, .16);
+      border: 1px solid rgba(255, 238, 215, .15);
+      font-size: 25px;
+    }
+
+    .category-name {
+      font-size: 18px;
+      font-weight: 740;
+      letter-spacing: -.02em;
+    }
+
+    .category-sub {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 20px 2px 10px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: -.02em;
+    }
+
+    .section-title span,
+    .small-link {
+      color: var(--muted);
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .joy-meter {
+      padding: 18px;
+      min-height: 220px;
+    }
+
+    .meter-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .meter-head h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -.03em;
+    }
+
+    .toggle {
+      width: 46px;
+      height: 26px;
+      padding: 3px;
+      border-radius: 999px;
+      background: rgba(255, 139, 45, .92);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+    }
+
+    .toggle::before {
+      content: "";
+      display: block;
+      width: 20px;
+      height: 20px;
+      margin-left: auto;
+      border-radius: 50%;
+      background: #fff5e8;
+      box-shadow: 0 4px 10px rgba(31, 11, 4, .32);
+    }
+
+    .meter-body {
+      display: grid;
+      place-items: center;
+      min-height: 150px;
+      position: relative;
+    }
+
+    .ring {
+      width: 136px;
+      height: 136px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle, rgba(255, 241, 220, .92) 0 45%, transparent 46%),
+        conic-gradient(from 310deg, var(--green) 0 18%, rgba(255,255,255,.13) 18% 24%, var(--yellow) 24% 57%, var(--orange) 57% 78%, rgba(255,255,255,.16) 78% 100%);
+      box-shadow: 0 24px 48px rgba(54, 20, 7, .28);
+      color: #6b321c;
+    }
+
+    .ring-value {
+      text-align: center;
+      transform: translateY(3px);
+    }
+
+    .ring-value strong {
+      display: block;
+      font-size: 34px;
+      letter-spacing: -.07em;
+    }
+
+    .ring-value span {
+      display: block;
+      margin-top: -3px;
+      font-size: 11px;
+      color: rgba(107, 50, 28, .72);
+    }
+
+    .scale-label {
+      position: absolute;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .scale-label.left { left: 0; bottom: 36px; }
+    .scale-label.top { top: 20px; left: 46%; }
+    .scale-label.right { right: 0; bottom: 36px; }
+
+    .mini-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: -4px;
+    }
+
+    .mini-btn {
+      width: 35px;
+      height: 35px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 244, 230, .84);
+      color: #69321d;
+      font-size: 21px;
+      box-shadow: 0 10px 24px rgba(32, 8, 1, .18);
+    }
+
+    .heatmap-card {
+      padding: 16px;
+    }
+
+    .heatmap-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 14px;
+    }
+
+    .heatmap-head h3 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: -.02em;
+    }
+
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 7px;
+    }
+
+    .day {
+      aspect-ratio: 1;
+      min-height: 36px;
+      border-radius: 12px;
+      background: rgba(255, 244, 230, .10);
+      border: 1px solid rgba(255, 242, 223, .09);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      color: rgba(255, 247, 236, .56);
+      position: relative;
+    }
+
+    .day.level-1 { background: rgba(255, 177, 93, .24); color: rgba(255, 247, 236, .8); }
+    .day.level-2 { background: rgba(255, 139, 45, .46); color: #fff7ec; box-shadow: 0 8px 20px rgba(255, 139, 45, .14); }
+    .day.level-3 { background: linear-gradient(145deg, rgba(255, 226, 138, .86), rgba(255, 139, 45, .82)); color: #6c321c; font-weight: 750; }
+    .day.today::after {
+      content: "";
+      position: absolute;
+      inset: -3px;
+      border-radius: 15px;
+      border: 1px solid rgba(255, 241, 220, .55);
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 1px 4px;
+      scrollbar-width: none;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 13px;
+      border-radius: 999px;
+      color: var(--text);
+      background: rgba(255, 244, 230, .12);
+      border: 1px solid rgba(255, 242, 223, .13);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--orange-2);
+      box-shadow: 0 0 18px currentColor;
+    }
+
+    .dot.green { background: var(--green); }
+    .dot.pink { background: var(--pink); }
+    .dot.blue { background: var(--blue); }
+    .dot.violet { background: var(--violet); }
+    .dot.yellow { background: var(--yellow); }
+
+    .source-card {
+      padding: 16px;
+    }
+
+    .source-row {
+      display: grid;
+      grid-template-columns: 54px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(255, 242, 223, .10);
+    }
+
+    .source-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .source-row:first-of-type { padding-top: 4px; }
+
+    .source-emoji {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 241, 220, .15);
+      border: 1px solid rgba(255, 238, 215, .13);
+      font-size: 24px;
+    }
+
+    .source-title {
+      font-size: 14px;
+      font-weight: 720;
+      letter-spacing: -.015em;
+    }
+
+    .source-sub {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .source-score {
+      font-size: 13px;
+      color: var(--cream);
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255, 139, 45, .20);
+      border: 1px solid rgba(255, 177, 93, .22);
+    }
+
+    .note-card {
+      padding: 18px;
+      min-height: 174px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background:
+        radial-gradient(circle at 70% 18%, rgba(255, 226, 138, .30), transparent 34%),
+        linear-gradient(145deg, rgba(255, 238, 215, .18), rgba(255, 238, 215, .08));
+    }
+
+    .quote {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.16;
+      letter-spacing: -.04em;
+    }
+
+    .quote-note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .history-card {
+      padding: 15px;
+    }
+
+    .history-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 11px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 242, 223, .10);
+    }
+
+    .history-item:last-child { border-bottom: 0; }
+
+    .small-emoji {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: rgba(255, 244, 230, .13);
+    }
+
+    .history-title {
+      font-size: 13px;
+      font-weight: 680;
+    }
+
+    .history-meta {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .stars {
+      color: var(--yellow);
+      letter-spacing: -2px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      left: 50%;
+      bottom: calc(14px + var(--safe-bottom));
+      transform: translateX(-50%);
+      width: min(calc(100% - 28px), 412px);
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      border-radius: 28px;
+      background: rgba(56, 31, 20, .58);
+      border: 1px solid rgba(255, 238, 215, .18);
+      box-shadow: 0 24px 70px rgba(27, 7, 1, .38);
+      backdrop-filter: blur(26px);
+      -webkit-backdrop-filter: blur(26px);
+      z-index: 20;
+    }
+
+    .nav-item {
+      min-height: 50px;
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      gap: 3px;
+      background: transparent;
+      color: rgba(255, 247, 236, .62);
+      font-size: 10px;
+    }
+
+    .nav-item strong {
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 500;
+    }
+
+    .nav-item.active {
+      background: rgba(255, 241, 220, .13);
+      color: var(--text);
+    }
+
+    .fab {
+      position: fixed;
+      right: max(20px, calc((100vw - 440px) / 2 + 20px));
+      bottom: calc(94px + var(--safe-bottom));
+      width: 58px;
+      height: 58px;
+      border-radius: 22px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #ff8b2d, #ffbf69);
+      color: #fffaf1;
+      box-shadow: 0 18px 40px rgba(255, 139, 45, .34);
+      font-size: 30px;
+      z-index: 21;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      background: rgba(18, 7, 3, .52);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 60;
+      padding: 14px;
+    }
+
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      width: min(100%, 412px);
+      border-radius: 32px;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 80% 0%, rgba(255, 226, 138, .25), transparent 32%),
+        rgba(61, 34, 23, .84);
+      border: 1px solid rgba(255, 238, 215, .22);
+      box-shadow: 0 30px 90px rgba(12, 3, 0, .54);
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .modal h3 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: -.035em;
+    }
+
+    .close {
+      width: 36px;
+      height: 36px;
+      border-radius: 14px;
+      background: rgba(255, 244, 230, .12);
+      font-size: 22px;
+    }
+
+    .field { margin-top: 12px; }
+
+    label {
+      display: block;
+      margin: 0 0 7px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid rgba(255, 238, 215, .16);
+      outline: 0;
+      border-radius: 18px;
+      background: rgba(255, 244, 230, .13);
+      color: var(--text);
+      padding: 13px 14px;
+    }
+
+    textarea { min-height: 92px; resize: vertical; }
+    select option { color: #2b150d; }
+
+    .range-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .rate-btn {
+      flex: 1;
+      min-height: 44px;
+      border-radius: 16px;
+      background: rgba(255, 244, 230, .12);
+      border: 1px solid rgba(255, 238, 215, .14);
+      color: rgba(255, 247, 236, .70);
+    }
+
+    .rate-btn.active {
+      background: linear-gradient(135deg, rgba(255, 139, 45, .94), rgba(255, 190, 105, .88));
+      color: #fff9ed;
+      box-shadow: 0 12px 24px rgba(255, 139, 45, .22);
+    }
+
+    .save-btn {
+      width: 100%;
+      min-height: 54px;
+      margin-top: 16px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #ff8b2d, #ffbd68);
+      font-weight: 760;
+      box-shadow: 0 18px 38px rgba(255, 139, 45, .28);
+    }
+
+    @media (min-width: 390px) {
+      .app { padding-inline: 16px; }
+      h1 { font-size: 29px; }
+      .stat-value { font-size: 38px; }
+    }
+  </style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <main class="app" aria-label="Дашборд Карта радости">
+    <nav class="top-pill" aria-label="Разделы">
+      <div class="pill-tabs">
+        <button class="pill-tab active">Сегодня</button>
+        <button class="pill-tab">Неделя</button>
+        <button class="pill-tab">Месяц</button>
+        <button class="pill-tab">История</button>
+      </div>
+      <button class="add-top js-open" aria-label="Добавить радость">+</button>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-head">
+        <div>
+          <p class="eyebrow">Welcome, <span id="tgUserName">You</span></p>
+          <h1>Карта радости</h1>
+        </div>
+        <div class="avatar" aria-label="Профиль">☀️</div>
+      </div>
+      <div class="search-line">
+        <span class="orb" aria-hidden="true"></span>
+        <span>Что сегодня было живым?</span>
+      </div>
+      <p class="eyebrow" id="tgStatus" style="margin:12px 0 0; position:relative; z-index:1;">Mini App готов к работе</p>
+    </section>
+
+    <section class="grid two" aria-label="Основная статистика">
+      <article class="card stat-card accent-card inner-glow">
+        <div class="stat-label">Сегодня <span class="icon-chip">✦</span></div>
+        <div>
+          <p class="stat-value" id="todayCount">3</p>
+          <p class="stat-note">момента радости найдено</p>
+        </div>
+      </article>
+
+      <article class="card stat-card inner-glow">
+        <div class="stat-label">Серия <span class="icon-chip">🔥</span></div>
+        <div>
+          <p class="stat-value" id="streakCount">8</p>
+          <p class="stat-note">дней подряд</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid big-small" aria-label="Дашборд радости">
+      <article class="card joy-meter">
+        <div class="meter-head">
+          <div>
+            <p class="eyebrow">Средний уровень</p>
+            <h3>Тепло дня</h3>
+          </div>
+          <span class="toggle" aria-hidden="true"></span>
+        </div>
+        <div class="meter-body">
+          <span class="scale-label left">1</span>
+          <span class="scale-label top">3</span>
+          <span class="scale-label right">5</span>
+          <div class="ring">
+            <div class="ring-value">
+              <strong id="avgJoy">4.2</strong>
+              <span>из 5</span>
+            </div>
+          </div>
+        </div>
+        <div class="mini-buttons">
+          <button class="mini-btn" aria-label="Уменьшить">−</button>
+          <button class="mini-btn js-open" aria-label="Добавить">+</button>
+        </div>
+      </article>
+
+      <article class="card category-card inner-glow">
+        <p class="category-title">Любимый источник</p>
+        <div class="category-main">
+          <div class="big-emoji" id="topEmoji">🌿</div>
+          <div>
+            <div class="category-name" id="topCategory">Природа</div>
+            <div class="category-sub" id="topCategorySub">6 раз за неделю</div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="section-title">
+      <h2>Категории</h2>
+      <a class="small-link" href="#history">смотреть все</a>
+    </div>
+
+    <section class="chips" aria-label="Категории радости" id="chips">
+      <button class="chip"><span class="dot green"></span>Природа · 6</button>
+      <button class="chip"><span class="dot yellow"></span>Красота · 5</button>
+      <button class="chip"><span class="dot pink"></span>Люди · 4</button>
+      <button class="chip"><span class="dot blue"></span>Творчество · 3</button>
+      <button class="chip"><span class="dot violet"></span>Тишина · 2</button>
+    </section>
+
+    <section class="card heatmap-card" aria-label="Тепловая карта месяца">
+      <div class="heatmap-head">
+        <h3>Тепловая карта</h3>
+        <span class="small-link">Декабрь</span>
+      </div>
+      <div class="heatmap-grid" id="heatmap"></div>
+    </section>
+
+    <div class="section-title">
+      <h2>Топ источников</h2>
+      <span>за неделю</span>
+    </div>
+
+    <section class="card source-card" id="sources" aria-label="Топ источников радости">
+      <div class="source-row">
+        <div class="source-emoji">🌿</div>
+        <div>
+          <div class="source-title">Прогулки и природа</div>
+          <div class="source-sub">дают больше всего спокойствия</div>
+        </div>
+        <div class="source-score">6</div>
+      </div>
+      <div class="source-row">
+        <div class="source-emoji">🌅</div>
+        <div>
+          <div class="source-title">Красивый свет</div>
+          <div class="source-sub">часто возвращает вкус к дню</div>
+        </div>
+        <div class="source-score">5</div>
+      </div>
+      <div class="source-row">
+        <div class="source-emoji">🎧</div>
+        <div>
+          <div class="source-title">Музыка</div>
+          <div class="source-sub">быстрый способ ожить</div>
+        </div>
+        <div class="source-score">4</div>
+      </div>
+    </section>
+
+    <div class="section-title">
+      <h2>Подсказка дня</h2>
+      <span>мягкая</span>
+    </div>
+
+    <section class="card note-card">
+      <div>
+        <p class="quote">Сегодня радость может быть не большой. Достаточно одной тёплой точки.</p>
+        <p class="quote-note">Приложение не требует продуктивности. Оно помогает замечать, где в обычной жизни уже есть свет.</p>
+      </div>
+    </section>
+
+    <div class="section-title" id="history">
+      <h2>Последние радости</h2>
+      <button class="small-link js-open">добавить</button>
+    </div>
+
+    <section class="card history-card" id="historyList" aria-label="История радостей"></section>
+  </main>
+
+  <button class="fab js-open" aria-label="Добавить радость">+</button>
+
+  <nav class="bottom-nav" aria-label="Нижняя навигация">
+    <button class="nav-item active"><strong>⌂</strong>Дом</button>
+    <button class="nav-item"><strong>◌</strong>Карта</button>
+    <button class="nav-item"><strong>✦</strong>Радости</button>
+    <button class="nav-item"><strong>☻</strong>Профиль</button>
+  </nav>
+
+  <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-label="Добавить радость">
+    <form class="modal" id="joyForm">
+      <div class="modal-head">
+        <h3>Добавить радость</h3>
+        <button type="button" class="close" id="closeModal" aria-label="Закрыть">×</button>
+      </div>
+      <div class="field">
+        <label for="joyText">Что меня порадовало?</label>
+        <textarea id="joyText" placeholder="Например: красивый свет на кухне утром" required></textarea>
+      </div>
+      <div class="field">
+        <label for="category">Категория</label>
+        <select id="category">
+          <option value="Природа">🌿 Природа</option>
+          <option value="Красота">🌅 Красота</option>
+          <option value="Люди">🤍 Люди</option>
+          <option value="Творчество">🎨 Творчество</option>
+          <option value="Тело">💃 Тело</option>
+          <option value="Тишина">🕯️ Тишина</option>
+          <option value="Новое">🧭 Новое</option>
+          <option value="Дом">🏡 Дом</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Сила радости</label>
+        <div class="range-row" id="rateRow">
+          <button type="button" class="rate-btn" data-rate="1">1</button>
+          <button type="button" class="rate-btn" data-rate="2">2</button>
+          <button type="button" class="rate-btn" data-rate="3">3</button>
+          <button type="button" class="rate-btn active" data-rate="4">4</button>
+          <button type="button" class="rate-btn" data-rate="5">5</button>
+        </div>
+      </div>
+      <button class="save-btn" type="submit">Сохранить точку радости</button>
+    </form>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+
+    function initTelegramMiniApp() {
+      if (!tg) return;
+      tg.ready();
+      tg.expand();
+      tg.enableClosingConfirmation();
+
+      const setViewport = () => {
+        const h = tg.viewportStableHeight || tg.viewportHeight || window.innerHeight;
+        document.documentElement.style.setProperty('--tg-viewport-height', h + 'px');
+      };
+      setViewport();
+      tg.onEvent('viewportChanged', setViewport);
+
+      try {
+        tg.setHeaderColor('#22120d');
+        tg.setBackgroundColor('#22120d');
+      } catch (e) {}
+
+      const user = tg.initDataUnsafe?.user;
+      if (user) {
+        const name = user.first_name || user.username || 'You';
+        const nameEl = document.getElementById('tgUserName');
+        if (nameEl) nameEl.textContent = name;
+        const statusEl = document.getElementById('tgStatus');
+        if (statusEl) statusEl.textContent = 'Открыто в Telegram Mini App';
+      }
+    }
+
+    initTelegramMiniApp();
+
+    const icons = {
+      'Природа': '🌿', 'Красота': '🌅', 'Люди': '🤍', 'Творчество': '🎨',
+      'Тело': '💃', 'Тишина': '🕯️', 'Новое': '🧭', 'Дом': '🏡'
+    };
+
+    const seed = [
+      { text: 'Прогулка и тёплый воздух после дождя', category: 'Природа', rate: 5, date: 'Сегодня' },
+      { text: 'Красивый оранжевый свет на стене', category: 'Красота', rate: 4, date: 'Сегодня' },
+      { text: 'Музыка, под которую захотелось двигаться', category: 'Тело', rate: 4, date: 'Сегодня' },
+      { text: 'Разговор, после которого стало легче', category: 'Люди', rate: 5, date: 'Вчера' },
+      { text: 'Десять минут тишины без телефона', category: 'Тишина', rate: 3, date: 'Вчера' }
+    ];
+
+    let joys = JSON.parse(localStorage.getItem('joy-map-items') || 'null') || seed;
+    let selectedRate = 4;
+
+    const modal = document.getElementById('modal');
+    const form = document.getElementById('joyForm');
+    const historyList = document.getElementById('historyList');
+    const todayCount = document.getElementById('todayCount');
+    const avgJoy = document.getElementById('avgJoy');
+    const chips = document.getElementById('chips');
+    const sources = document.getElementById('sources');
+    const topCategory = document.getElementById('topCategory');
+    const topEmoji = document.getElementById('topEmoji');
+    const topCategorySub = document.getElementById('topCategorySub');
+
+    function save() {
+      localStorage.setItem('joy-map-items', JSON.stringify(joys));
+      if (tg?.CloudStorage) {
+        tg.CloudStorage.setItem('joy-map-items', JSON.stringify(joys));
+      }
+    }
+
+    function countCategories() {
+      return joys.reduce((acc, item) => {
+        acc[item.category] = (acc[item.category] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    function renderStats() {
+      const today = joys.filter(item => item.date === 'Сегодня').length;
+      const avg = joys.reduce((sum, item) => sum + Number(item.rate), 0) / joys.length;
+      const cat = countCategories();
+      const sorted = Object.entries(cat).sort((a, b) => b[1] - a[1]);
+      const top = sorted[0] || ['Природа', 0];
+
+      todayCount.textContent = today;
+      avgJoy.textContent = avg.toFixed(1);
+      topCategory.textContent = top[0];
+      topEmoji.textContent = icons[top[0]] || '✦';
+      topCategorySub.textContent = `${top[1]} раз за неделю`;
+
+      chips.innerHTML = sorted.map(([name, count], index) => {
+        const colors = ['green', 'yellow', 'pink', 'blue', 'violet'];
+        return `<button class="chip"><span class="dot ${colors[index % colors.length]}"></span>${name} · ${count}</button>`;
+      }).join('');
+
+      sources.innerHTML = sorted.slice(0, 3).map(([name, count]) => {
+        const hint = {
+          'Природа': 'даёт больше всего спокойствия',
+          'Красота': 'возвращает вкус к дню',
+          'Люди': 'создают чувство тепла',
+          'Творчество': 'напоминает о живом внутри',
+          'Тело': 'помогает почувствовать себя',
+          'Тишина': 'собирает внимание обратно',
+          'Новое': 'даёт интерес и движение',
+          'Дом': 'создаёт уют и опору'
+        }[name] || 'частый источник радости';
+        return `
+          <div class="source-row">
+            <div class="source-emoji">${icons[name] || '✦'}</div>
+            <div>
+              <div class="source-title">${name}</div>
+              <div class="source-sub">${hint}</div>
+            </div>
+            <div class="source-score">${count}</div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = joys.slice(0, 7).map(item => {
+        const stars = '★★★★★'.slice(0, item.rate);
+        return `
+          <div class="history-item">
+            <div class="small-emoji">${icons[item.category] || '✦'}</div>
+            <div>
+              <div class="history-title">${escapeHtml(item.text)}</div>
+              <div class="history-meta">${item.category} · ${item.date}</div>
+            </div>
+            <div class="stars">${stars}</div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderHeatmap() {
+      const heatmap = document.getElementById('heatmap');
+      const levels = [0,1,0,2,1,3,0,1,2,0,3,1,2,1,0,2,3,1,0,2,1,3,0,1,2,0,1,3];
+      heatmap.innerHTML = levels.map((level, index) => {
+        const todayClass = index === 27 ? ' today' : '';
+        return `<div class="day level-${level}${todayClass}">${index + 1}</div>`;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag]));
+    }
+
+    document.querySelectorAll('.js-open').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tg?.HapticFeedback?.impactOccurred('light');
+        modal.classList.add('show');
+      });
+    });
+
+    document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('show'));
+    modal.addEventListener('click', event => {
+      if (event.target === modal) modal.classList.remove('show');
+    });
+
+    document.querySelectorAll('.rate-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tg?.HapticFeedback?.selectionChanged();
+        selectedRate = Number(btn.dataset.rate);
+        document.querySelectorAll('.rate-btn').forEach(item => item.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      const text = document.getElementById('joyText').value.trim();
+      const category = document.getElementById('category').value;
+      if (!text) return;
+
+      tg?.HapticFeedback?.notificationOccurred('success');
+      joys.unshift({ text, category, rate: selectedRate, date: 'Сегодня' });
+      save();
+      renderStats();
+      renderHistory();
+      form.reset();
+      selectedRate = 4;
+      document.querySelectorAll('.rate-btn').forEach(item => item.classList.toggle('active', item.dataset.rate === '4'));
+      modal.classList.remove('show');
+    });
+
+    renderHeatmap();
+    renderStats();
+    renderHistory();
+  </script>
+</body>
+</html>

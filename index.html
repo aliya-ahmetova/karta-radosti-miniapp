@@ -1036,23 +1036,30 @@
   <script>
     const tg = window.Telegram?.WebApp;
 
+    function tgCall(method, ...args) {
+      try {
+        if (tg && typeof tg[method] === 'function') return tg[method](...args);
+      } catch (error) {
+        console.warn('Telegram WebApp method failed:', method, error);
+      }
+      return null;
+    }
+
     function initTelegramMiniApp() {
       if (!tg) return;
-      tg.ready();
-      tg.expand();
-      tg.enableClosingConfirmation();
+
+      tgCall('ready');
+      tgCall('expand');
+      tgCall('enableClosingConfirmation');
 
       const setViewport = () => {
         const h = tg.viewportStableHeight || tg.viewportHeight || window.innerHeight;
         document.documentElement.style.setProperty('--tg-viewport-height', h + 'px');
       };
       setViewport();
-      tg.onEvent('viewportChanged', setViewport);
-
-      try {
-        tg.setHeaderColor('#22120d');
-        tg.setBackgroundColor('#22120d');
-      } catch (e) {}
+      tgCall('onEvent', 'viewportChanged', setViewport);
+      tgCall('setHeaderColor', '#22120d');
+      tgCall('setBackgroundColor', '#22120d');
 
       const user = tg.initDataUnsafe?.user;
       if (user) {
@@ -1064,7 +1071,11 @@
       }
     }
 
-    initTelegramMiniApp();
+    try {
+      initTelegramMiniApp();
+    } catch (error) {
+      console.warn('Telegram init failed, app continues in browser mode:', error);
+    }
 
     const icons = {
       'Природа': '🌿', 'Красота': '🌅', 'Люди': '🤍', 'Творчество': '🎨',
@@ -1095,8 +1106,10 @@
 
     function save() {
       localStorage.setItem('joy-map-items', JSON.stringify(joys));
-      if (tg?.CloudStorage) {
-        tg.CloudStorage.setItem('joy-map-items', JSON.stringify(joys));
+      try {
+        tg?.CloudStorage?.setItem?.('joy-map-items', JSON.stringify(joys));
+      } catch (error) {
+        console.warn('Telegram CloudStorage save failed:', error);
       }
     }
 
@@ -1180,7 +1193,7 @@
 
     document.querySelectorAll('.js-open').forEach(btn => {
       btn.addEventListener('click', () => {
-        tg?.HapticFeedback?.impactOccurred('light');
+        tg?.HapticFeedback?.impactOccurred?.('light');
         modal.classList.add('show');
       });
     });
@@ -1192,7 +1205,7 @@
 
     document.querySelectorAll('.rate-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        tg?.HapticFeedback?.selectionChanged();
+        tg?.HapticFeedback?.selectionChanged?.();
         selectedRate = Number(btn.dataset.rate);
         document.querySelectorAll('.rate-btn').forEach(item => item.classList.remove('active'));
         btn.classList.add('active');
@@ -1205,7 +1218,7 @@
       const category = document.getElementById('category').value;
       if (!text) return;
 
-      tg?.HapticFeedback?.notificationOccurred('success');
+      tg?.HapticFeedback?.notificationOccurred?.('success');
       joys.unshift({ text, category, rate: selectedRate, date: 'Сегодня' });
       save();
       renderStats();

@@ -251,6 +251,63 @@
     }
     .source-row { width: 100%; text-align: left; color: inherit; background: transparent; }
 
+    .quick-options {
+      margin-top: 10px;
+      display: grid;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transform: translateY(-4px);
+      transition: max-height .24s ease, opacity .2s ease, transform .2s ease;
+    }
+
+    .hero.quick-active .quick-options,
+    .hero:focus-within .quick-options {
+      max-height: 190px;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .quick-label {
+      margin: 0 0 6px;
+      color: rgba(255, 247, 236, .58);
+      font-size: 11px;
+    }
+
+    .quick-category-row,
+    .quick-rate-row {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .quick-category-row::-webkit-scrollbar,
+    .quick-rate-row::-webkit-scrollbar { display: none; }
+
+    .quick-category,
+    .quick-rate {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: rgba(255, 244, 230, .10);
+      border: 1px solid rgba(255, 242, 223, .13);
+      color: rgba(255, 247, 236, .76);
+      min-height: 34px;
+      padding: 8px 11px;
+      font-size: 12px;
+    }
+
+    .quick-category.active,
+    .quick-rate.active {
+      color: var(--text);
+      background: rgba(255, 139, 45, .30);
+      border-color: rgba(255, 177, 93, .58);
+      box-shadow: 0 8px 22px rgba(255, 139, 45, .16);
+    }
+
     .grid {
       display: grid;
       gap: 12px;
@@ -886,6 +943,31 @@
         <input id="quickJoyInput" type="text" inputmode="text" autocomplete="off" placeholder="Что сегодня было живым?" aria-label="Быстро добавить радость" />
         <button type="submit" class="quick-save" aria-label="Сохранить">＋</button>
       </form>
+      <div class="quick-options" id="quickOptions" aria-label="Настройки быстрой радости">
+        <div>
+          <p class="quick-label">Категория</p>
+          <div class="quick-category-row" id="quickCategoryRow">
+            <button type="button" class="quick-category active" data-quick-category="Новое">🧭 Новое</button>
+            <button type="button" class="quick-category" data-quick-category="Природа">🌿 Природа</button>
+            <button type="button" class="quick-category" data-quick-category="Красота">🌅 Красота</button>
+            <button type="button" class="quick-category" data-quick-category="Люди">🤍 Люди</button>
+            <button type="button" class="quick-category" data-quick-category="Творчество">🎨 Творчество</button>
+            <button type="button" class="quick-category" data-quick-category="Тело">💃 Тело</button>
+            <button type="button" class="quick-category" data-quick-category="Тишина">🕯️ Тишина</button>
+            <button type="button" class="quick-category" data-quick-category="Дом">🏡 Дом</button>
+          </div>
+        </div>
+        <div>
+          <p class="quick-label">Сила радости</p>
+          <div class="quick-rate-row" id="quickRateRow">
+            <button type="button" class="quick-rate" data-quick-rate="1">1</button>
+            <button type="button" class="quick-rate" data-quick-rate="2">2</button>
+            <button type="button" class="quick-rate" data-quick-rate="3">3</button>
+            <button type="button" class="quick-rate active" data-quick-rate="4">4</button>
+            <button type="button" class="quick-rate" data-quick-rate="5">5</button>
+          </div>
+        </div>
+      </div>
       <p class="eyebrow" id="tgStatus" style="margin:12px 0 0; position:relative; z-index:1;">Mini App готов к работе</p>
     </section>
 
@@ -1078,8 +1160,8 @@
     function labelDate(iso){const today=todayISO();if(iso===today)return'Сегодня';const y=new Date();y.setDate(y.getDate()-1);if(iso===toISO(y))return'Вчера';const [year,month,day]=iso.split('-');return `${day}.${month}.${year}`}
     function startOfWeek(date){const d=new Date(date);const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);d.setHours(0,0,0,0);return d}
     function loadJoys(){try{localStorage.removeItem(OLD_STORAGE_KEY)}catch(e){}try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')||[]}catch(e){return[]}}
-    let joys=loadJoys(),selectedRate=4,currentView='today',activeCategory=null;
-    const modal=document.getElementById('modal'),form=document.getElementById('joyForm'),quickJoyForm=document.getElementById('quickJoyForm'),quickJoyInput=document.getElementById('quickJoyInput'),historyList=document.getElementById('historyList'),todayCount=document.getElementById('todayCount'),streakCount=document.getElementById('streakCount'),avgJoy=document.getElementById('avgJoy'),chips=document.getElementById('chips'),sources=document.getElementById('sources'),topCategory=document.getElementById('topCategory'),topEmoji=document.getElementById('topEmoji'),topCategorySub=document.getElementById('topCategorySub'),currentMonthLabel=document.getElementById('currentMonthLabel');
+    let joys=loadJoys(),selectedRate=4,quickCategory='Новое',quickRate=4,currentView='today',activeCategory=null;
+    const modal=document.getElementById('modal'),form=document.getElementById('joyForm'),quickJoyForm=document.getElementById('quickJoyForm'),quickJoyInput=document.getElementById('quickJoyInput'),quickOptions=document.getElementById('quickOptions'),historyList=document.getElementById('historyList'),todayCount=document.getElementById('todayCount'),streakCount=document.getElementById('streakCount'),avgJoy=document.getElementById('avgJoy'),chips=document.getElementById('chips'),sources=document.getElementById('sources'),topCategory=document.getElementById('topCategory'),topEmoji=document.getElementById('topEmoji'),topCategorySub=document.getElementById('topCategorySub'),currentMonthLabel=document.getElementById('currentMonthLabel');
     function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(joys));try{tg?.CloudStorage?.setItem?.(STORAGE_KEY,JSON.stringify(joys))}catch(e){console.warn('Telegram CloudStorage save failed:',e)}}
     function addJoy(text,category='Новое',rate=4,iso=todayISO()){const clean=text.trim();if(!clean)return;joys.unshift({text:clean,category,rate:Number(rate),iso,date:labelDate(iso),createdAt:new Date().toISOString()});save();tg?.HapticFeedback?.notificationOccurred?.('success');renderAll()}
     function filteredJoys(){const now=new Date(),today=todayISO(),weekStart=startOfWeek(now);return joys.filter(item=>{if(activeCategory&&item.category!==activeCategory)return false;const iso=item.iso||today;if(currentView==='today')return iso===today;if(currentView==='week')return new Date(iso)>=weekStart;if(currentView==='month')return iso.slice(0,7)===today.slice(0,7);return true})}
@@ -1093,7 +1175,7 @@
     function bindCategoryButtons(){document.querySelectorAll('[data-category]').forEach(btn=>{btn.onclick=()=>{activeCategory=btn.dataset.category;renderAll()}});document.querySelectorAll('[data-clear-category]').forEach(btn=>{btn.onclick=()=>{activeCategory=null;renderAll()}})}
     document.querySelectorAll('.pill-tab').forEach(btn=>{btn.addEventListener('click',()=>{currentView=btn.dataset.view||'today';document.querySelectorAll('.pill-tab').forEach(item=>item.classList.toggle('active',item===btn));if(currentView==='history')document.getElementById('history')?.scrollIntoView({behavior:'smooth'});renderAll()})});
     document.querySelectorAll('.nav-item').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item===btn));const nav=btn.dataset.nav;if(nav==='home')window.scrollTo({top:0,behavior:'smooth'});if(nav==='map')document.querySelector('.heatmap-card')?.scrollIntoView({behavior:'smooth'});if(nav==='joys')document.getElementById('history')?.scrollIntoView({behavior:'smooth'});if(nav==='profile')modal.classList.add('show')})});
-    quickJoyForm.addEventListener('submit',e=>{e.preventDefault();addJoy(quickJoyInput.value,'Новое',4,todayISO());quickJoyInput.value='';quickJoyInput.blur()});
+    quickJoyInput.addEventListener('input',()=>{document.querySelector('.hero')?.classList.toggle('quick-active', quickJoyInput.value.trim().length>0)});document.querySelectorAll('.quick-category').forEach(btn=>{btn.addEventListener('click',()=>{quickCategory=btn.dataset.quickCategory||'Новое';document.querySelectorAll('.quick-category').forEach(item=>item.classList.toggle('active',item===btn));quickJoyInput.focus();tg?.HapticFeedback?.selectionChanged?.()})});document.querySelectorAll('.quick-rate').forEach(btn=>{btn.addEventListener('click',()=>{quickRate=Number(btn.dataset.quickRate||4);document.querySelectorAll('.quick-rate').forEach(item=>item.classList.toggle('active',item===btn));quickJoyInput.focus();tg?.HapticFeedback?.selectionChanged?.()})});quickJoyForm.addEventListener('submit',e=>{e.preventDefault();addJoy(quickJoyInput.value,quickCategory,quickRate,todayISO());quickJoyInput.value='';document.querySelector('.hero')?.classList.remove('quick-active');quickJoyInput.blur()});
     document.getElementById('closeModal').addEventListener('click',()=>modal.classList.remove('show'));modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('show')});
     document.querySelectorAll('.rate-btn').forEach(btn=>{btn.addEventListener('click',()=>{tg?.HapticFeedback?.selectionChanged?.();selectedRate=Number(btn.dataset.rate);document.querySelectorAll('.rate-btn').forEach(item=>item.classList.remove('active'));btn.classList.add('active')})});
     form.addEventListener('submit',e=>{e.preventDefault();const text=document.getElementById('joyText').value.trim(),category=document.getElementById('category').value;if(!text)return;addJoy(text,category,selectedRate,modal.dataset.iso||todayISO());form.reset();selectedRate=4;document.querySelectorAll('.rate-btn').forEach(item=>item.classList.toggle('active',item.dataset.rate==='4'));modal.classList.remove('show')});

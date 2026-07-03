@@ -476,25 +476,6 @@
       letter-spacing: -.03em;
     }
 
-    .toggle {
-      width: 46px;
-      height: 26px;
-      padding: 3px;
-      border-radius: 999px;
-      background: rgba(255, 139, 45, .92);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
-    }
-
-    .toggle::before {
-      content: "";
-      display: block;
-      width: 20px;
-      height: 20px;
-      margin-left: auto;
-      border-radius: 50%;
-      background: #fff5e8;
-      box-shadow: 0 4px 10px rgba(31, 11, 4, .32);
-    }
 
     .meter-body {
       display: grid;
@@ -533,6 +514,35 @@
       font-size: 11px;
       color: rgba(107, 50, 28, .72);
     }
+
+
+    .meter-legend,
+    .heatmap-legend {
+      display: grid;
+      gap: 6px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+
+    .legend-dot.green { background: var(--green); }
+    .legend-dot.yellow { background: var(--yellow); }
+    .legend-dot.orange { background: var(--orange); }
+    .legend-dot.empty { background: rgba(255, 244, 230, .12); border: 1px solid rgba(255, 242, 223, .18); }
 
     .scale-label {
       position: absolute;
@@ -1016,10 +1026,8 @@
       <article class="card joy-meter card-action" data-card-action="warmth" role="button" tabindex="0" aria-label="Показать тепло дня">
         <div class="meter-head">
           <div>
-            <p class="eyebrow">Средний уровень</p>
             <h3>Тепло дня</h3>
           </div>
-          <span class="toggle" aria-hidden="true"></span>
         </div>
         <div class="meter-body">
           <span class="scale-label left">1</span>
@@ -1032,13 +1040,14 @@
             </div>
           </div>
         </div>
-        <div class="mini-buttons">
-          <button class="mini-btn" aria-label="Уменьшить">−</button>
-          <button class="mini-btn js-open" aria-label="Добавить">+</button>
+        <div class="meter-legend" aria-label="Расшифровка цветов тепла дня">
+          <div class="legend-row"><span class="legend-dot green"></span>зелёный — спокойная радость 1–2</div>
+          <div class="legend-row"><span class="legend-dot yellow"></span>жёлтый — тёплая радость 3</div>
+          <div class="legend-row"><span class="legend-dot orange"></span>оранжевый — сильная радость 4–5</div>
         </div>
       </article>
 
-      <article class="card category-card inner-glow">
+      <article class="card category-card inner-glow card-action" data-card-action="favorite" role="button" tabindex="0" aria-label="Показать любимый источник">
         <p class="category-title">Любимый источник</p>
         <div class="category-main">
           <div class="big-emoji" id="topEmoji">🌿</div>
@@ -1069,6 +1078,11 @@
         <span class="small-link" id="currentMonthLabel">Месяц</span>
       </div>
       <div class="heatmap-grid" id="heatmap"></div>
+      <div class="heatmap-legend" aria-label="Что значат цвета календаря">
+        <div class="legend-row"><span class="legend-dot empty"></span>пусто — радостей в этот день нет</div>
+        <div class="legend-row"><span class="legend-dot yellow"></span>светло — 1–3 по силе</div>
+        <div class="legend-row"><span class="legend-dot orange"></span>ярко — 4–5 по силе</div>
+      </div>
     </section>
 
     <div class="section-title">
@@ -1197,7 +1211,7 @@
     function bindOpenButtons(){document.querySelectorAll('.js-open').forEach(btn=>{btn.onclick=()=>{tg?.HapticFeedback?.impactOccurred?.('light');modal.dataset.iso=todayISO();modal.classList.add('show');setTimeout(()=>document.getElementById('joyText')?.focus(),120)}})}
     function bindCategoryButtons(){document.querySelectorAll('[data-category]').forEach(btn=>{btn.onclick=()=>{activeCategory=btn.dataset.category;renderAll()}});document.querySelectorAll('[data-clear-category]').forEach(btn=>{btn.onclick=()=>{activeCategory=null;renderAll()}})}
     function setView(view,scrollTarget){currentView=view||'today';document.querySelectorAll('.pill-tab').forEach(item=>item.classList.toggle('active',(item.dataset.view||'today')===currentView));renderAll();if(scrollTarget)document.querySelector(scrollTarget)?.scrollIntoView({behavior:'smooth',block:'start'})}document.querySelectorAll('.pill-tab').forEach(btn=>{btn.addEventListener('click',()=>{setView(btn.dataset.view||'today',btn.dataset.view==='history'?'#history':null)})});
-    document.querySelectorAll('.nav-item').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item===btn));const nav=btn.dataset.nav;if(nav==='home')window.scrollTo({top:0,behavior:'smooth'});if(nav==='map')document.querySelector('.heatmap-card')?.scrollIntoView({behavior:'smooth'});if(nav==='joys')document.getElementById('history')?.scrollIntoView({behavior:'smooth'});if(nav==='profile')modal.classList.add('show')})});document.querySelectorAll('[data-card-action]').forEach(card=>{const run=()=>{const action=card.dataset.cardAction;tg?.HapticFeedback?.impactOccurred?.('light');if(action==='today'){activeCategory=null;setView('today','#history');if(tgStatus)tgStatus.textContent='Показаны радости за сегодня'}if(action==='streak'){activeCategory=null;setView('history','#history');if(tgStatus)tgStatus.textContent='Серия — дни подряд с радостями'}if(action==='warmth'){activeCategory=null;setView('today','#history');if(tgStatus)tgStatus.textContent='Тепло дня — средняя сила сегодняшних радостей'}};card.addEventListener('click',run);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();run()}})});
+    document.querySelectorAll('.nav-item').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item===btn));const nav=btn.dataset.nav;if(nav==='home')window.scrollTo({top:0,behavior:'smooth'});if(nav==='map')document.querySelector('.heatmap-card')?.scrollIntoView({behavior:'smooth'});if(nav==='joys')document.getElementById('history')?.scrollIntoView({behavior:'smooth'});if(nav==='profile')modal.classList.add('show')})});document.querySelectorAll('[data-card-action]').forEach(card=>{const run=()=>{const action=card.dataset.cardAction;tg?.HapticFeedback?.impactOccurred?.('light');if(action==='today'){activeCategory=null;setView('today','#history');if(tgStatus)tgStatus.textContent='Показаны радости за сегодня'}if(action==='streak'){activeCategory=null;setView('history','#history');if(tgStatus)tgStatus.textContent='Серия — дни подряд с радостями'}if(action==='warmth'){activeCategory=null;setView('today','#history');if(tgStatus)tgStatus.textContent='Тепло дня — средняя сила сегодняшних радостей'}if(action==='favorite'){const name=topCategory?.textContent?.trim();if(name&&name!=='Пока пусто'){activeCategory=name;setView('history','#history');if(tgStatus)tgStatus.textContent='Показан любимый источник: '+name}else{modal.dataset.iso=todayISO();modal.classList.add('show');if(tgStatus)tgStatus.textContent='Добавь первую радость — потом появится любимый источник'}}};card.addEventListener('click',run);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();run()}})});
     function updateQuickSave(){const hasText=quickJoyInput.value.trim().length>0;document.querySelector('.hero')?.classList.toggle('quick-active',hasText);if(quickJoySave){quickJoySave.textContent=hasText?'✓ Готово':'+ Добавить';quickJoySave.setAttribute('aria-label',hasText?'Готово':'Добавить радость')}}quickJoyInput.addEventListener('input',updateQuickSave);document.querySelectorAll('.quick-category').forEach(btn=>{btn.addEventListener('click',()=>{quickCategory=btn.dataset.quickCategory||'Новое';document.querySelectorAll('.quick-category').forEach(item=>item.classList.toggle('active',item===btn));quickJoyInput.focus();tg?.HapticFeedback?.selectionChanged?.()})});document.querySelectorAll('.quick-rate').forEach(btn=>{btn.addEventListener('click',()=>{quickRate=Number(btn.dataset.quickRate||4);document.querySelectorAll('.quick-rate').forEach(item=>item.classList.toggle('active',item===btn));quickJoyInput.focus();tg?.HapticFeedback?.selectionChanged?.()})});quickJoyForm.addEventListener('submit',e=>{e.preventDefault();if(!quickJoyInput.value.trim()){quickJoyInput.focus();document.querySelector('.hero')?.classList.add('quick-active');return}addJoy(quickJoyInput.value,quickCategory,quickRate,todayISO());quickJoyInput.value='';updateQuickSave();quickJoyInput.blur()});updateQuickSave();
     document.getElementById('closeModal').addEventListener('click',()=>modal.classList.remove('show'));modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('show')});
     document.querySelectorAll('.rate-btn').forEach(btn=>{btn.addEventListener('click',()=>{tg?.HapticFeedback?.selectionChanged?.();selectedRate=Number(btn.dataset.rate);document.querySelectorAll('.rate-btn').forEach(item=>item.classList.remove('active'));btn.classList.add('active')})});

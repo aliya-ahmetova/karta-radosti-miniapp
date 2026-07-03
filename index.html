@@ -233,15 +233,19 @@
     }
     .search-line input::placeholder { color: rgba(255, 247, 236, .56); }
     .quick-save {
-      flex: 0 0 32px;
-      width: 32px;
+      flex: 0 0 auto;
+      width: auto;
+      min-width: 86px;
       height: 32px;
       display: grid;
       place-items: center;
-      border-radius: 50%;
+      border-radius: 999px;
       background: rgba(255, 139, 45, .85);
       color: #fff7ec;
-      font-size: 18px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .01em;
+      padding: 0 12px;
     }
     .empty-state {
       color: var(--muted);
@@ -266,7 +270,7 @@
 
     .hero.quick-active .quick-options,
     .hero:focus-within .quick-options {
-      max-height: 190px;
+      max-height: 260px;
       opacity: 1;
       transform: translateY(0);
     }
@@ -277,7 +281,13 @@
       font-size: 11px;
     }
 
-    .quick-category-row,
+    .quick-category-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      padding-bottom: 2px;
+    }
+
     .quick-rate-row {
       display: flex;
       gap: 7px;
@@ -941,7 +951,7 @@
       <form class="search-line" id="quickJoyForm">
         <span class="orb" aria-hidden="true"></span>
         <input id="quickJoyInput" type="text" inputmode="text" autocomplete="off" placeholder="Что сегодня было живым?" aria-label="Быстро добавить радость" />
-        <button type="submit" class="quick-save" aria-label="Сохранить">＋</button>
+        <button type="submit" class="quick-save" aria-label="Готово">✓ Готово</button>
       </form>
       <div class="quick-options" id="quickOptions" aria-label="Настройки быстрой радости">
         <div>
